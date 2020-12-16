@@ -1,5 +1,9 @@
+network:
+	docker network create -d overlay --attachable workbench
+
 %.deploy:
 	docker stack deploy -c ./docker-compose-$*.yml $*
+	make $*.ps
 
 %.ps:
 	watch -n 1 docker stack ps $*
