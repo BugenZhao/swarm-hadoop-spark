@@ -1,6 +1,6 @@
 version: '3'
 services:
-  master:
+  spark-master:
     image: bde2020/spark-master:3.0.1-hadoop3.2
     ports:
       - 8080:8080
@@ -18,7 +18,7 @@ services:
     env_file:
       - ./hadoop.env
 
-  worker:
+  spark-worker:
     image: bde2020/spark-worker:3.0.1-hadoop3.2
     ports:
       - 8081:8081
@@ -32,6 +32,59 @@ services:
         condition: on-failure
     env_file:
       - ./hadoop.env
+  
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    ports:
+      - 9870:9870
+    networks:
+      - workbench
+    volumes:
+      - namenode:/hadoop/dfs/name
+    environment:
+      - CLUSTER_NAME=test
+    env_file:
+      - ./hadoop.env
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    networks:
+      - workbench
+    volumes:
+      - datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop.env
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+
+  visualizer:
+    image: dockersamples/visualizer:stable
+    networks:
+      - workbench
+    ports:
+      - 18080:8080
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+volumes:
+  datanode:
+  namenode:
 
 networks:
   workbench:
