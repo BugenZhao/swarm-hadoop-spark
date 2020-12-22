@@ -12,6 +12,7 @@ network:
 	docker stack rm $*
 
 INPUT := ./data/London2013.csv
+OUTPUT := ./out/
 
 HADOOP_NAMENODE := $(shell docker ps -a --format "{{.Names}}" | grep namenode)
 HADOOP_APP := ss_hadoop.jar
@@ -35,6 +36,8 @@ hadoop.run:
 		hdfs dfs -copyToLocal /output/ /tmp/output;\
 		head -n 10 /tmp/output/*;\
 	'
+	mkdir -p $(OUTPUT)/hadoop
+	docker cp $(HADOOP_NAMENODE):/tmp/output/. $(OUTPUT)/hadoop/
 
 
 SPARK_MASTER := $(shell docker ps -a --format "{{.Names}}" | grep master)
@@ -60,3 +63,5 @@ spark.run:
 		hdfs dfs -copyToLocal /output/ /tmp/output;\
 		head -n 10 /tmp/output/*;\
 	'
+	mkdir -p $(OUTPUT)/spark
+	docker cp $(HADOOP_NAMENODE):/tmp/output/. $(OUTPUT)/spark/
